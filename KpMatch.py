@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 
 
 """ Const Numbers """
-NN_DIST_RATIO      = 0.75
+NN_DIST_RATIO      = 0.70
 MIN_MATCH_COUNT    = 8
 THRESH_RANSAC      = 0.50
 PARAMS_DRAW        = dict(matchColor=(0,255,255),singlePointColor=(255,0,0),flags=0)
@@ -23,13 +23,13 @@ NUM_HIST_OCTAVE    = 4
 
 """ Thresh """
 THRESH_HIST_ANGLE  = 15
-THRESH_HIST_OCTAVE = 3
+THRESH_HIST_OCTAVE = 2
 
 """ Input Files """
-FILENAME_IMAGE_0   = "input/graffiti/img1.ppm"
-FILENAME_IMAGE_1   = "input/graffiti/img2.ppm"
-#FILENAME_IMAGE_0   = "input/boat/img1.pgm"
-#FILENAME_IMAGE_1   = "input/boat/img2.pgm"
+#FILENAME_IMAGE_0   = "input/graffiti/img1.ppm"
+#FILENAME_IMAGE_1   = "input/graffiti/img3.ppm"
+FILENAME_IMAGE_0   = "input/boat/img1.pgm"
+FILENAME_IMAGE_1   = "input/boat/img3.pgm"
 
 
 """============================================================================
@@ -192,16 +192,16 @@ def kpMatch(_img0, _img1):
     -------------------------------------------------------"""
 
     """ Detector """
-    #detect   = cv2.xfeatures2d.SIFT_create()
-    detect   = cv2.xfeatures2d.SURF_create()
+    detect   = cv2.xfeatures2d.SIFT_create()
+    #detect   = cv2.xfeatures2d.SURF_create()
     #detect   = cv2.ORB_create()
     #detect   = cv2.AgastFeatureDetector_create()
     #detect   = cv2.AKAZE_create()
     
  
     """ Descriptor """
-    #descript = cv2.xfeatures2d.SIFT_create()
-    descript = cv2.xfeatures2d.SURF_create()
+    descript = cv2.xfeatures2d.SIFT_create()
+    #descript = cv2.xfeatures2d.SURF_create()
     #descript = cv2.xfeatures2d.DAISY_create()
     #descript = cv2.ORB_create()
     #descript = cv2.BRISK_create()
@@ -250,28 +250,44 @@ def kpMatch(_img0, _img1):
     
     
     """ imwrite """
-    cv2.imwrite("Kp0.jpg", kpimg0)
-    cv2.imwrite("Kp1.jpg", kpimg1)
-    cv2.imwrite("Kps.jpg", img2)
+    cv2.imwrite("_Kp0.jpg", kpimg0)
+    cv2.imwrite("_Kp1.jpg", kpimg1)
+    cv2.imwrite("_Kps.jpg", img2)
     
-    return [img2, proj2]
+    return [img2, proj2, mask]
  
  
 """============================================================================
 ============================================================================"""
 if __name__ == "__main__":
     
+    """ Input Files """
     img0 = cv2.imread(FILENAME_IMAGE_0, cv2.IMREAD_COLOR)
     img1 = cv2.imread(FILENAME_IMAGE_1, cv2.IMREAD_COLOR)
     
-    img, proj = kpMatch(img0,img1)
+    """ Matching """    
+    img, proj, mask = kpMatch(img0, img1)
+    wrp = cv2.warpPerspective(img0, proj, (img1.shape[1],img1.shape[0]))
 
-    print("Proj:")
+    """ Display Homography Matrix """
     print(proj)    
     
+    """ Save to File """
     sys.stdout = open("out.txt", "w")
     print(proj, file=sys.stdout) 
     
-    cv2.imshow("image",img)
+    """ Merge """
+    alpha = 0.5
+    beta  = 0.5
+    mrg  = cv2.addWeighted(img1, alpha, wrp, beta, 0)
+    
+    """ Show """
+    cv2.imshow("image", img)
+    cv2.imshow("warp", wrp)
+    cv2.imshow("merge", mrg)
+    cv2.imwrite("_Warp.jpg", wrp)
+    cv2.imwrite("_Merge.jpg", mrg)
     cv2.waitKey()
     cv2.destroyAllWindows()
+
+#EOF
