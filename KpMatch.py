@@ -19,10 +19,15 @@ MIN_MATCH_COUNT    = 8
 THRESH_RANSAC      = 0.50
 PARAMS_DRAW        = dict(matchColor=(0,255,255),singlePointColor=(255,0,0),flags=0)
 NUM_HIST_ANGLE     = 360 #DO NOT CHANGE THIS
-NUM_HIST_OCTAVE    = 8
-THRESH_HIST_ANGLE  = 15
-THRESH_HIST_OCTAVE = 2
+NUM_HIST_OCTAVE    = 4
+THRESH_HIST_ANGLE  = 180
+THRESH_HIST_OCTAVE = 10
 
+""" Input Files """
+FILENAME_IMAGE_0   = "input/graffiti/img1.ppm"
+FILENAME_IMAGE_1   = "input/graffiti/img4.ppm"
+#FILENAME_IMAGE_0   = "input/boat/img1.pgm"
+#FILENAME_IMAGE_1   = "input/boat/img2.pgm"
 
 
 """============================================================================
@@ -44,7 +49,7 @@ def createHist(_kp0, _kp1, _matches):
     for m in _matches:
 
         """ Angle """
-        gap_angle = int(_kp0[m.queryIdx].angle - _kp1[m.trainIdx].angle + 0.5)
+        gap_angle = int(_kp1[m.trainIdx].angle - _kp0[m.queryIdx].angle + 0.5)
         while (gap_angle < 0):
             gap_angle += NUM_HIST_ANGLE
 
@@ -52,7 +57,7 @@ def createHist(_kp0, _kp1, _matches):
 
 
         """ Octave """        
-        gap_octave = (_kp0[m.queryIdx].octave&(NUM_HIST_OCTAVE-1)) - (_kp1[m.trainIdx].octave&(NUM_HIST_OCTAVE-1))
+        gap_octave = ((_kp1[m.trainIdx].octave&0xFF) - (_kp0[m.queryIdx].octave&0xFF))
         if ((gap_octave < -NUM_HIST_OCTAVE) or (NUM_HIST_OCTAVE < gap_octave)):
             continue
 
@@ -74,7 +79,7 @@ def calcDiffHistAngle(_id0, _id1):
     
 
     """ Simple gap """
-    dif = _id0 - _id1
+    dif = _id1 - _id0
 
 
     """ Clip in range[0-359] """
@@ -120,13 +125,20 @@ def pickGoodMatches(_kp0, _kp1, _matches):
 
 
     """ Preview of histograms """
-    plt.figure(100)
+    plt.figure(100, figsize=(12, 6))
     plt.title("Angle dif histogram")
+    plt.xticks( np.arange(0, 360, 15) )
+    #plt.hist(hist_angle, bins=NUM_HIST_ANGLE, range=(0,360))    
     plt.plot(hist_angle)
-    plt.figure(101)
+    #plt.show()
+    
+    plt.figure(101, figsize=(12, 6))
     plt.title("Octave dif histogram")
+    plt.xticks( np.arange(0, 2*NUM_HIST_OCTAVE+1, 1) )
+    #plt.hist(hist_octave, bins=NUM_HIST_OCTAVE*2+1, range=(-NUM_HIST_OCTAVE,NUM_HIST_OCTAVE))    
     plt.plot(hist_octave)
-    plt.pause(2.0)
+    #plt.show()    
+    plt.pause(.0001)
     
     
     """ Get max and its index """
@@ -140,19 +152,19 @@ def pickGoodMatches(_kp0, _kp1, _matches):
     for m2 in g:
 
         """ Angle bin number """
-        dif_angle  = int(_kp0[m2.queryIdx].angle - _kp1[m2.trainIdx].angle + 0.5)
+        dif_angle  = int(_kp1[m2.trainIdx].angle - _kp0[m2.queryIdx].angle + 0.5)
 
         """ Octave bin number """
-        dif_octave = (_kp0[m2.queryIdx].octave&(NUM_HIST_OCTAVE-1)) - (_kp1[m2.trainIdx].octave&(NUM_HIST_OCTAVE-1))
-        dif_octave += NUM_HIST_OCTAVE + 1
+        dif_octave = (_kp1[m2.trainIdx].octave&0xFF) - (_kp0[m2.queryIdx].octave&0xFF)
+        dif_octave += (NUM_HIST_OCTAVE + 1)
 
         """ Calcurate the gap from max bin """
         dif_hist_angle  = calcDiffHistAngle(id_max_hist_angle, dif_angle)
         dif_hist_octave = abs(id_max_hist_octave - dif_octave)
         
         """ Flags """
-        f_angle  = (dif_hist_angle  < THRESH_HIST_ANGLE)
-        f_octave = (dif_hist_octave < THRESH_HIST_OCTAVE)
+        f_angle  = (dif_hist_angle  <= THRESH_HIST_ANGLE)
+        f_octave = (dif_hist_octave <= THRESH_HIST_OCTAVE)
 
         """ Add for g_ """
         if (f_angle and f_octave):
@@ -178,16 +190,16 @@ def kpMatch(_img0, _img1):
     -------------------------------------------------------"""
 
     """ Detector """
-    detect   = cv2.xfeatures2d.SIFT_create()
-    #detect   = cv2.xfeatures2d.SURF_create()
+    #detect   = cv2.xfeatures2d.SIFT_create()
+    detect   = cv2.xfeatures2d.SURF_create()
     #detect   = cv2.ORB_create()
     #detect   = cv2.AgastFeatureDetector_create()
     #detect   = cv2.AKAZE_create()
     
  
     """ Descriptor """
-    descript = cv2.xfeatures2d.SIFT_create()
-    #descript = cv2.xfeatures2d.SURF_create()
+    #descript = cv2.xfeatures2d.SIFT_create()
+    descript = cv2.xfeatures2d.SURF_create()
     #descript = cv2.xfeatures2d.DAISY_create()
     #descript = cv2.ORB_create()
     #descript = cv2.BRISK_create()
@@ -246,13 +258,17 @@ def kpMatch(_img0, _img1):
 """============================================================================
 ============================================================================"""
 if __name__ == "__main__":
-    img0 = cv2.imread("input/img1.ppm", cv2.IMREAD_COLOR)
-    #img1 = cv2.imread("input/img1_rot90.ppm", cv2.IMREAD_COLOR)
-    #img1 = cv2.imread("input/img1_rot180.ppm", cv2.IMREAD_COLOR)
-    #img1 = cv2.imread("input/img1_scale0.5.ppm", cv2.IMREAD_COLOR)
-    img1 = cv2.imread("input/img1_scale0.25.ppm", cv2.IMREAD_COLOR)
-
+    
+    img0 = cv2.imread(FILENAME_IMAGE_0, cv2.IMREAD_COLOR)
+    img1 = cv2.imread(FILENAME_IMAGE_1, cv2.IMREAD_COLOR)
+    
     img, proj = kpMatch(img0,img1)
+
+    print("Proj:")
+    print(proj)    
+    
+    sys.stdout = open("out.txt", "w")
+    print(proj, file=sys.stdout) 
     
     cv2.imshow("image",img)
     cv2.waitKey()
