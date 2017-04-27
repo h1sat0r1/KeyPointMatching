@@ -20,12 +20,14 @@ THRESH_RANSAC      = 0.50
 PARAMS_DRAW        = dict(matchColor=(0,255,255),singlePointColor=(255,0,0),flags=0)
 NUM_HIST_ANGLE     = 360 #DO NOT CHANGE THIS
 NUM_HIST_OCTAVE    = 4
-THRESH_HIST_ANGLE  = 180
-THRESH_HIST_OCTAVE = 10
+
+""" Thresh """
+THRESH_HIST_ANGLE  = 15
+THRESH_HIST_OCTAVE = 3
 
 """ Input Files """
 FILENAME_IMAGE_0   = "input/graffiti/img1.ppm"
-FILENAME_IMAGE_1   = "input/graffiti/img4.ppm"
+FILENAME_IMAGE_1   = "input/graffiti/img2.ppm"
 #FILENAME_IMAGE_0   = "input/boat/img1.pgm"
 #FILENAME_IMAGE_1   = "input/boat/img2.pgm"
 
