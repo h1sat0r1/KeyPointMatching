@@ -24,7 +24,7 @@ THRESH_NN_DIST_RATIO   = 0.70
 THRESH_RANSAC          = 0.50
 THRESH_MIN_MATCH_COUNT = 8
 THRESH_HIST_ANGLE      = 15
-THRESH_HIST_OCTAVE     = 3
+THRESH_HIST_OCTAVE     = 2
 
 """ Keypoint Detector """
 DETECTOR   = 'SIFT' #'SIFT' 'SURF' 'ORB' 'AGAST' 'AKAZE'
@@ -36,7 +36,7 @@ DESCRIPTOR = 'SIFT' #'SIFT' 'SURF' 'DAISY' 'ORB' 'BRISK' 'FREAK' 'AKAZE'
 #FILENAME_IMAGE_0   = "input/graffiti/img1.ppm"
 #FILENAME_IMAGE_1   = "input/graffiti/img3.ppm"
 FILENAME_IMAGE_0   = "input/boat/img1.pgm"
-FILENAME_IMAGE_1   = "input/boat/img3.pgm"
+FILENAME_IMAGE_1   = "input/boat/img4.pgm"
 
 """ Output directory """
 DIRNAME_OUTPUT     = "output"
@@ -72,7 +72,6 @@ def dCreate(_detType, _desType):
         print('No keypoint detection method is specified.')
         print('Use ORB detector.')
 
-    
  
     """ Keypoint Descriptor """
     if   _desType == 'SIFT':
@@ -180,11 +179,10 @@ def pickGoodMatches(_kp0, _kp1, _matches):
     Picking better matches
     """
     
-
-    """ thresholded by distance """
+    """ Thresholded by distance """
     g  = []
 
-    """ thresholded by distance, angle and octave """
+    """ Thresholded by distance, angle and octave """
     g_ = []
 
 
@@ -214,10 +212,8 @@ def pickGoodMatches(_kp0, _kp1, _matches):
     #plt.hist(hist_octave, bins=NUM_HIST_OCTAVE*2+1, range=(-NUM_HIST_OCTAVE,NUM_HIST_OCTAVE))    
     plt.plot(hist_octave)
     #plt.show()    
-    try:
-        plt.pause(.0001)
-    except:
-        print('Something has happen.')
+    plt.pause(.0001)
+
     
     """ Get max and its index """
     num_max_hist_angle  = max(hist_angle)
@@ -331,7 +327,7 @@ if __name__ == "__main__":
         #print(e.strerror)
         #print(e.errno)
         #print(e.filename)
-        print('Output dir \"'+ e.filename + '\" exists.')
+        print('Output dir \"'+ e.filename + '\" already exists.')
 
 
     """ Matching """    
@@ -340,7 +336,7 @@ if __name__ == "__main__":
 
 
     """ Display Homography Matrix """
-    print('Homography mat: img0 -> img1')
+    print('Homography mat (img0->img1)')
     print(proj)    
     
 
@@ -356,9 +352,9 @@ if __name__ == "__main__":
     
 
     """ Show """
-    cv2.imshow("image", img)
     cv2.imshow("warp", wrp)
     cv2.imshow("merge", mrg)
+    cv2.imshow("image", img)
     cv2.imwrite(DIR_OUTPUT + "_Warp.jpg", wrp)
     cv2.imwrite(DIR_OUTPUT + "_Merge.jpg", mrg)
     cv2.waitKey()
