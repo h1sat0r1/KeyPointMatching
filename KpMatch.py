@@ -7,6 +7,7 @@
 
 
 """ Import """
+import os
 import numpy as np
 import cv2
 import sys
@@ -14,22 +15,94 @@ from matplotlib import pyplot as plt
 
 
 """ Const Numbers """
-NN_DIST_RATIO      = 0.70
-MIN_MATCH_COUNT    = 8
-THRESH_RANSAC      = 0.50
-PARAMS_DRAW        = dict(matchColor=(0,255,255),singlePointColor=(255,0,0),flags=0)
+PARAMS_DRAW        = dict(matchColor=(0,255,255), singlePointColor=(255,0,0), flags=0)
 NUM_HIST_ANGLE     = 360 #DO NOT CHANGE THIS
 NUM_HIST_OCTAVE    = 4
 
 """ Thresh """
-THRESH_HIST_ANGLE  = 15
-THRESH_HIST_OCTAVE = 2
+THRESH_NN_DIST_RATIO   = 0.70
+THRESH_RANSAC          = 0.50
+THRESH_MIN_MATCH_COUNT = 8
+THRESH_HIST_ANGLE      = 15
+THRESH_HIST_OCTAVE     = 3
+
+""" Keypoint Detector """
+DETECTOR   = 'SIFT' #'SIFT' 'SURF' 'ORB' 'AGAST' 'AKAZE'
+
+""" Keypoint Descriptor """
+DESCRIPTOR = 'SIFT' #'SIFT' 'SURF' 'DAISY' 'ORB' 'BRISK' 'FREAK' 'AKAZE'
 
 """ Input Files """
 #FILENAME_IMAGE_0   = "input/graffiti/img1.ppm"
 #FILENAME_IMAGE_1   = "input/graffiti/img3.ppm"
 FILENAME_IMAGE_0   = "input/boat/img1.pgm"
 FILENAME_IMAGE_1   = "input/boat/img3.pgm"
+
+""" Output directory """
+DIRNAME_OUTPUT     = "output"
+DIR_OUTPUT         = DIRNAME_OUTPUT + "/"
+
+
+"""============================================================================
+    dCreate()
+============================================================================"""
+def dCreate(_detType, _desType):
+    
+    print('Detector  : ' + _detType)
+    print('Descriptor: ' + _desType)
+    
+    """ Keypoint Detector """
+    if   _detType == 'SIFT':
+        detect_ = cv2.xfeatures2d.SIFT_create()
+
+    elif _detType == 'SURF':
+        detect_ = cv2.xfeatures2d.SURF_create()
+
+    elif _detType == 'ORB':
+        detect_ = cv2.ORB_create()
+
+    elif _detType == 'AGAST':
+        detect_ = cv2.AgastFeatureDetector_create()
+
+    elif _detType == 'AKAZE':
+        detect_ = cv2.AKAZE_create()
+        
+    else:
+        detect_ = cv2.ORB_create()
+        print('No keypoint detection method is specified.')
+        print('Use ORB detector.')
+
+    
+ 
+    """ Keypoint Descriptor """
+    if   _desType == 'SIFT':
+        descript_ = cv2.xfeatures2d.SIFT_create()
+
+    elif _desType == 'SURF':
+        descript_ = cv2.xfeatures2d.SURF_create()
+        
+    elif _desType == 'DAISY':
+        descript_ = cv2.xfeatures2d.DAISY_create()
+
+    elif _desType == 'ORB':
+        descript_ = cv2.ORB_create()
+
+    elif _desType == 'BRISK':
+        descript_ = cv2.BRISK_create()
+
+    elif _desType == 'FREAK':
+        descript_ = cv2.xfeatures2d.FREAK_create()
+
+    elif _desType == 'AKAZE':
+        descript_ = cv2.AKAZE_create()    
+
+    else:
+        descript_ = cv2.ORB_create()
+        print('No keypoint description method is specified.')
+        print('Use ORB descriptor.')
+    
+    return [detect_, descript_]
+
 
 
 """============================================================================
@@ -117,7 +190,7 @@ def pickGoodMatches(_kp0, _kp1, _matches):
 
     """ Thresholding based on distance """    
     for m1,n1 in _matches:
-        f_dist   = (m1.distance < NN_DIST_RATIO * n1.distance)
+        f_dist   = (m1.distance < THRESH_NN_DIST_RATIO * n1.distance)
         if (f_dist):
             g.append(m1)
 
@@ -126,22 +199,25 @@ def pickGoodMatches(_kp0, _kp1, _matches):
     hist_angle, hist_octave = createHist(_kp0, _kp1, g)
 
 
-    """ Preview of histograms """
+    """ Angle Hist Preview """
     plt.figure(100, figsize=(12, 6))
     plt.title("Angle dif histogram")
     plt.xticks( np.arange(0, 360, 15) )
     #plt.hist(hist_angle, bins=NUM_HIST_ANGLE, range=(0,360))    
     plt.plot(hist_angle)
     #plt.show()
-    
+
+    """ Octve Hist Preview """
     plt.figure(101, figsize=(12, 6))
     plt.title("Octave dif histogram")
     plt.xticks( np.arange(0, 2*NUM_HIST_OCTAVE+1, 1) )
     #plt.hist(hist_octave, bins=NUM_HIST_OCTAVE*2+1, range=(-NUM_HIST_OCTAVE,NUM_HIST_OCTAVE))    
     plt.plot(hist_octave)
     #plt.show()    
-    plt.pause(.0001)
-    
+    try:
+        plt.pause(.0001)
+    except:
+        print('Something has happen.')
     
     """ Get max and its index """
     num_max_hist_angle  = max(hist_angle)
@@ -175,7 +251,6 @@ def pickGoodMatches(_kp0, _kp1, _matches):
     return g_
 
 
-
 """============================================================================
     Keypoint Match ()
 ============================================================================"""
@@ -185,28 +260,9 @@ def kpMatch(_img0, _img1):
     gry0 = cv2.cvtColor(_img0, cv2.COLOR_BGR2GRAY)
     gry1 = cv2.cvtColor(_img1, cv2.COLOR_BGR2GRAY)
     
-    
-    """-------------------------------------------------------
-       SIFT, SURF, ORB, etc.
-       *Not all of detectors & descriptors
-    -------------------------------------------------------"""
 
-    """ Detector """
-    detect   = cv2.xfeatures2d.SIFT_create()
-    #detect   = cv2.xfeatures2d.SURF_create()
-    #detect   = cv2.ORB_create()
-    #detect   = cv2.AgastFeatureDetector_create()
-    #detect   = cv2.AKAZE_create()
-    
- 
-    """ Descriptor """
-    descript = cv2.xfeatures2d.SIFT_create()
-    #descript = cv2.xfeatures2d.SURF_create()
-    #descript = cv2.xfeatures2d.DAISY_create()
-    #descript = cv2.ORB_create()
-    #descript = cv2.BRISK_create()
-    #descript = cv2.xfeatures2d.FREAK_create()
-    #descript = cv2.AKAZE_create()
+    """ Detector and Descriptor"""
+    detect, descript = dCreate(DETECTOR, DESCRIPTOR)
     
     
     """ Detection """
@@ -226,7 +282,7 @@ def kpMatch(_img0, _img1):
    
     
     """" Compute Homography"""
-    if(len(good) < MIN_MATCH_COUNT):
+    if(len(good) < THRESH_MIN_MATCH_COUNT):
         """ In case of few matches """
         print("[ERROR] Not enough matches are found...\n")
         sys.exit(-1)
@@ -250,9 +306,9 @@ def kpMatch(_img0, _img1):
     
     
     """ imwrite """
-    cv2.imwrite("_Kp0.jpg", kpimg0)
-    cv2.imwrite("_Kp1.jpg", kpimg1)
-    cv2.imwrite("_Kps.jpg", img2)
+    cv2.imwrite(DIR_OUTPUT + "_Kp0.jpg", kpimg0)
+    cv2.imwrite(DIR_OUTPUT + "_Kp1.jpg", kpimg1)
+    cv2.imwrite(DIR_OUTPUT + "_Kps.jpg", img2)
     
     return [img2, proj2, mask]
  
@@ -265,28 +321,46 @@ if __name__ == "__main__":
     img0 = cv2.imread(FILENAME_IMAGE_0, cv2.IMREAD_COLOR)
     img1 = cv2.imread(FILENAME_IMAGE_1, cv2.IMREAD_COLOR)
     
+
+    """ Create Output Dir """
+    try:
+        os.mkdir(DIRNAME_OUTPUT)
+        print('Created Output dir \"' + DIRNAME_OUTPUT + '\".')
+        
+    except FileExistsError as e:
+        #print(e.strerror)
+        #print(e.errno)
+        #print(e.filename)
+        print('Output dir \"'+ e.filename + '\" exists.')
+
+
     """ Matching """    
     img, proj, mask = kpMatch(img0, img1)
     wrp = cv2.warpPerspective(img0, proj, (img1.shape[1],img1.shape[0]))
 
+
     """ Display Homography Matrix """
+    print('Homography mat: img0 -> img1')
     print(proj)    
     
+
     """ Save to File """
-    sys.stdout = open("out.txt", "w")
+    sys.stdout = open(DIR_OUTPUT + 'homography.txt', 'w')
     print(proj, file=sys.stdout) 
     
+
     """ Merge """
     alpha = 0.5
     beta  = 0.5
     mrg  = cv2.addWeighted(img1, alpha, wrp, beta, 0)
     
+
     """ Show """
     cv2.imshow("image", img)
     cv2.imshow("warp", wrp)
     cv2.imshow("merge", mrg)
-    cv2.imwrite("_Warp.jpg", wrp)
-    cv2.imwrite("_Merge.jpg", mrg)
+    cv2.imwrite(DIR_OUTPUT + "_Warp.jpg", wrp)
+    cv2.imwrite(DIR_OUTPUT + "_Merge.jpg", mrg)
     cv2.waitKey()
     cv2.destroyAllWindows()
 
