@@ -17,7 +17,7 @@ from matplotlib import pyplot as plt
 """ Const Numbers """
 PARAMS_DRAW        = dict(matchColor=(0,255,255), singlePointColor=(255,0,0), flags=0)
 NUM_HIST_ANGLE     = 360 #DO NOT CHANGE THIS
-NUM_HIST_OCTAVE    = 4
+NUM_HIST_OCTAVE    = 8
 
 """ Thresh """
 THRESH_NN_DIST_RATIO   = 0.70
@@ -39,7 +39,7 @@ FILENAME_IMAGE_0   = "input/boat/img1.pgm"
 FILENAME_IMAGE_1   = "input/boat/img4.pgm"
 
 """ Output directory """
-DIRNAME_OUTPUT     = "output"
+DIRNAME_OUTPUT     = "./output"
 DIR_OUTPUT         = DIRNAME_OUTPUT + "/"
 
 
@@ -107,7 +107,10 @@ def dCreate(_detType, _desType):
 """============================================================================
     createHist()
 ============================================================================"""
-def createHist(_kp0, _kp1, _matches):
+def createHist(_kp0, _kp1, _matches,
+               _num_hist_angle=NUM_HIST_ANGLE,
+               _num_hist_octave=NUM_HIST_OCTAVE
+               ):
 
     """
     Creating histograms of dif of angle and octave
@@ -115,8 +118,8 @@ def createHist(_kp0, _kp1, _matches):
     
 
     """ Create lists """
-    hist_angle  = [0] * NUM_HIST_ANGLE
-    hist_octave = [0] * (NUM_HIST_OCTAVE * 2 + 1)
+    hist_angle  = [0] * _num_hist_angle
+    hist_octave = [0] * (_num_hist_octave * 2 + 1)
     
     
     """ Roop for all matches """
@@ -132,10 +135,10 @@ def createHist(_kp0, _kp1, _matches):
 
         """ Octave """        
         gap_octave = ((_kp1[m.trainIdx].octave&0xFF) - (_kp0[m.queryIdx].octave&0xFF))
-        if ((gap_octave < -NUM_HIST_OCTAVE) or (NUM_HIST_OCTAVE < gap_octave)):
+        if ((gap_octave < -_num_hist_octave) or (_num_hist_octave < gap_octave)):
             continue
 
-        hist_octave[gap_octave + NUM_HIST_OCTAVE] += 1
+        hist_octave[gap_octave + _num_hist_octave] += 1
 
 
     return [hist_angle, hist_octave]
@@ -145,7 +148,9 @@ def createHist(_kp0, _kp1, _matches):
 """============================================================================
     calcDiffHistAngle()
 ============================================================================"""
-def calcDiffHistAngle(_id0, _id1):
+def calcDiffHistAngle(_id0, _id1,
+                      _num_hist_angle=NUM_HIST_ANGLE
+                      ):
 
     """
     Calcurating the gap of two bins in angle histogram
@@ -157,13 +162,13 @@ def calcDiffHistAngle(_id0, _id1):
 
 
     """ Clip in range[0-359] """
-    while(not(0 <= dif < NUM_HIST_ANGLE)):
+    while(not(0 <= dif < _num_hist_angle)):
         
         if (dif < 0):
-            dif += NUM_HIST_ANGLE
+            dif += _num_hist_angle
             
         elif(NUM_HIST_ANGLE <= dif):
-            dif -= NUM_HIST_ANGLE
+            dif -= _num_hist_angle
 
        
     return dif
@@ -173,7 +178,17 @@ def calcDiffHistAngle(_id0, _id1):
 """============================================================================
     pickGoodMatches()
 ============================================================================"""
-def pickGoodMatches(_kp0, _kp1, _matches):
+def pickGoodMatches(_kp0, _kp1, _matches,
+                    _detType=DETECTOR,
+                    _desType=DESCRIPTOR,
+                    _thresh_NN_dist_ratio=THRESH_NN_DIST_RATIO,
+                    _thresh_hist_angle=THRESH_HIST_ANGLE,
+                    _thresh_hist_octave=THRESH_HIST_OCTAVE,
+                    _thresh_min_match_count=THRESH_MIN_MATCH_COUNT,
+                    _thresh_RANSAC=THRESH_RANSAC,
+                    _num_hist_angle=NUM_HIST_ANGLE,
+                    _num_hist_octave=NUM_HIST_OCTAVE
+                    ):
     
     """
     Picking better matches
@@ -188,28 +203,28 @@ def pickGoodMatches(_kp0, _kp1, _matches):
 
     """ Thresholding based on distance """    
     for m1,n1 in _matches:
-        f_dist   = (m1.distance < THRESH_NN_DIST_RATIO * n1.distance)
+        f_dist   = (m1.distance < _thresh_NN_dist_ratio * n1.distance)
         if (f_dist):
             g.append(m1)
 
 
     """ Creating histograms """
-    hist_angle, hist_octave = createHist(_kp0, _kp1, g)
+    hist_angle, hist_octave = createHist(_kp0, _kp1, g, _num_hist_angle=_num_hist_angle, _num_hist_octave=_num_hist_octave)
 
 
     """ Angle Hist Preview """
     plt.figure(100, figsize=(12, 6))
     plt.title("Angle dif histogram")
     plt.xticks( np.arange(0, 360, 15) )
-    #plt.hist(hist_angle, bins=NUM_HIST_ANGLE, range=(0,360))    
+    #plt.hist(hist_angle, bins=_num_hist_angle, range=(0,360))
     plt.plot(hist_angle)
     #plt.show()
 
     """ Octve Hist Preview """
     plt.figure(101, figsize=(12, 6))
     plt.title("Octave dif histogram")
-    plt.xticks( np.arange(0, 2*NUM_HIST_OCTAVE+1, 1) )
-    #plt.hist(hist_octave, bins=NUM_HIST_OCTAVE*2+1, range=(-NUM_HIST_OCTAVE,NUM_HIST_OCTAVE))    
+    plt.xticks( np.arange(0, 2*_num_hist_octave+1, 1) )
+    #plt.hist(hist_octave, bins=_num_hist_octave*2+1, range=(-_num_hist_octave,_num_hist_octave))
     plt.plot(hist_octave)
     #plt.show()    
     plt.pause(.0001)
@@ -230,15 +245,15 @@ def pickGoodMatches(_kp0, _kp1, _matches):
 
         """ Octave bin number """
         dif_octave = (_kp1[m2.trainIdx].octave&0xFF) - (_kp0[m2.queryIdx].octave&0xFF)
-        dif_octave += (NUM_HIST_OCTAVE + 1)
+        dif_octave += (_num_hist_octave + 1)
 
         """ Calcurate the gap from max bin """
         dif_hist_angle  = calcDiffHistAngle(id_max_hist_angle, dif_angle)
         dif_hist_octave = abs(id_max_hist_octave - dif_octave)
         
         """ Flags """
-        f_angle  = (dif_hist_angle  <= THRESH_HIST_ANGLE)
-        f_octave = (dif_hist_octave <= THRESH_HIST_OCTAVE)
+        f_angle  = (dif_hist_angle  <= _thresh_hist_angle)
+        f_octave = (dif_hist_octave <= _thresh_hist_octave)
 
         """ Add for g_ """
         if (f_angle and f_octave):
@@ -250,7 +265,18 @@ def pickGoodMatches(_kp0, _kp1, _matches):
 """============================================================================
     Keypoint Match ()
 ============================================================================"""
-def kpMatch(_img0, _img1):
+def kpMatch(_img0, _img1,
+            _detType=DETECTOR,
+            _desType=DESCRIPTOR,
+            _thresh_NN_dist_ratio=THRESH_NN_DIST_RATIO,
+            _thresh_hist_angle=THRESH_HIST_ANGLE,
+            _thresh_hist_octave=THRESH_HIST_OCTAVE,
+            _thresh_min_match_count=THRESH_MIN_MATCH_COUNT,
+            _thresh_RANSAC=THRESH_RANSAC,
+            _num_hist_angle=NUM_HIST_ANGLE,
+            _num_hist_octave=NUM_HIST_OCTAVE,
+            _dir_output=DIR_OUTPUT
+            ):
 
     """ Glayscale """
     gry0 = cv2.cvtColor(_img0, cv2.COLOR_BGR2GRAY)
@@ -258,7 +284,7 @@ def kpMatch(_img0, _img1):
     
 
     """ Detector and Descriptor"""
-    detect, descript = dCreate(DETECTOR, DESCRIPTOR)
+    detect, descript = dCreate(_detType, _desType)
     
     
     """ Detection """
@@ -278,7 +304,7 @@ def kpMatch(_img0, _img1):
    
     
     """" Compute Homography"""
-    if(len(good) < THRESH_MIN_MATCH_COUNT):
+    if(len(good) < _thresh_min_match_count):
         """ In case of few matches """
         print("[ERROR] Not enough matches are found...\n")
         sys.exit(-1)
@@ -289,7 +315,7 @@ def kpMatch(_img0, _img1):
         dstPts = np.float32([kp1[m.trainIdx].pt for m in good]).reshape(-1,1,2)
 
         """ Calculating homography """
-        proj2, mask = cv2.findHomography(srcPts, dstPts, cv2.RANSAC, THRESH_RANSAC)
+        proj2, mask = cv2.findHomography(srcPts, dstPts, cv2.RANSAC, _thresh_RANSAC)
     
     
     """ Draw Matching Result """
@@ -302,9 +328,9 @@ def kpMatch(_img0, _img1):
     
     
     """ imwrite """
-    cv2.imwrite(DIR_OUTPUT + "_Kp0.jpg", kpimg0)
-    cv2.imwrite(DIR_OUTPUT + "_Kp1.jpg", kpimg1)
-    cv2.imwrite(DIR_OUTPUT + "_Kps.jpg", img2)
+    cv2.imwrite(_dir_output + "_Kp0.jpg", kpimg0)
+    cv2.imwrite(_dir_output + "_Kp1.jpg", kpimg1)
+    cv2.imwrite(_dir_output + "_Kps.jpg", img2)
     
     return [img2, proj2, mask]
  
@@ -331,7 +357,7 @@ if __name__ == "__main__":
 
 
     """ Matching """    
-    img, proj, mask = kpMatch(img0, img1)
+    img, proj, mask = kpMatch(img0, img1, _detType='AKAZE', _desType='AKAZE')
     wrp = cv2.warpPerspective(img0, proj, (img1.shape[1],img1.shape[0]))
 
 
