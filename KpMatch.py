@@ -417,8 +417,8 @@ def kpMatch2(_img_master, _img_slave, _detector, _descriptor,
     Input:
         _img_master,  ## Mandatory
         _img_slave,   ## Mandatory
-        _detector=dCreate(DETECTOR_AKAZE),
-        _descriptorType=dCreate(DESCRIPTOR_AKAZE),
+        _detector,    ## Mandatory
+        _descriptor,  ## Mandatory
         _thresh_NN_dist_ratio=THRESH_NN_DIST_RATIO,
         _thresh_hist_angle=THRESH_HIST_ANGLE,
         _thresh_hist_octave=THRESH_HIST_OCTAVE,
