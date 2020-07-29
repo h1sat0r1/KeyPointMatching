@@ -190,7 +190,6 @@ def calcDiffHistAngle(_id0, _id1, _num_hist_angle):
     pickGoodMatches()
 ============================================================================"""
 def pickGoodMatches(_kp0, _kp1, _matches, 
-                    _detType, _desType, 
                     _thresh_NN_dist_ratio, 
                     _thresh_hist_angle, 
                     _thresh_hist_octave, 
@@ -348,7 +347,6 @@ def kpMatch(_img_master, _img_slave,
         bf = cv.BFMatcher()
         matches = bf.knnMatch(dsc0, dsc1, k=2)
         good = pickGoodMatches(kp0, kp1, matches, \
-                                _detType=_desType, _desType=_desType, \
                                 _thresh_NN_dist_ratio=_thresh_NN_dist_ratio, \
                                 _thresh_hist_angle=_thresh_hist_angle, \
                                 _thresh_hist_octave=_thresh_hist_octave, \
@@ -468,7 +466,6 @@ def kpMatch2(_img_master, _img_slave, _detector, _descriptor,
         bf = cv.BFMatcher()
         matches = bf.knnMatch(dsc0, dsc1, k=2)
         good = pickGoodMatches(kp0, kp1, matches, \
-                                _detType=_desType, _desType=_desType, \
                                 _thresh_NN_dist_ratio=_thresh_NN_dist_ratio, \
                                 _thresh_hist_angle=_thresh_hist_angle, \
                                 _thresh_hist_octave=_thresh_hist_octave, \
