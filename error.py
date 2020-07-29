@@ -47,13 +47,13 @@ def error_homography(size_slave, homography_gt, homography_est, num_pts_w=21, nu
         size_slave,       ## Put as XXX.shape
         homography_gt,    ## Slave to Master
         homography_est,   ## Slave to Master
-        num_pts_w=21,
-        num_pts_h=21
+        num_pts_w=21,     ## It should be odd number
+        num_pts_h=21      ## It should be odd number
     
     Output:
-        error_proj, 
-        pts, 
-        pts_proj
+        error_homography, 
+        pts_proj_est, 
+        pts_proj_gt
     """
     
     ## Slave Image Size
