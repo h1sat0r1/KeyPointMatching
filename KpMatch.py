@@ -397,7 +397,9 @@ def kpMatch(_img_master, _img_slave,
 """============================================================================
     Keypoint Match ver.2
 ============================================================================"""
-def kpMatch2(_img_master, _img_slave, _detector, _descriptor,
+def kpMatch2(_img_master, _img_slave, 
+            _detector_master, _descriptor_master,
+            _detector_slave, _descriptor_slave,
             _thresh_NN_dist_ratio=THRESH_NN_DIST_RATIO,
             _thresh_hist_angle=THRESH_HIST_ANGLE,
             _thresh_hist_octave=THRESH_HIST_OCTAVE,
@@ -453,13 +455,13 @@ def kpMatch2(_img_master, _img_slave, _detector, _descriptor,
     
     
     ## Detection
-    kp0 = _detector.detect(gry0)
-    kp1 = _detector.detect(gry1)
+    kp0 = _detector_master.detect(gry0)
+    kp1 = _detector_slave.detect(gry1)
         
         
     ## Description
-    kp0, dsc0 = _descriptor.compute(gry0, kp0)
-    kp1, dsc1 = _descriptor.compute(gry1, kp1)
+    kp0, dsc0 = _descriptor_master.compute(gry0, kp0)
+    kp1, dsc1 = _descriptor_slave.compute(gry1, kp1)
     
     ## Matching
     try:

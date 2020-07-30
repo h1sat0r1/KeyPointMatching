@@ -70,9 +70,13 @@ def error_homography(size_slave, homography_gt, homography_est, num_pts_w=21, nu
     ## Projection
     pts_proj_gt  = np.dot(pts, np.transpose(homography_gt))
     pts_proj_est = np.dot(pts, np.transpose(homography_est))
+    #print(pts_proj_gt)
+    #print(pts_proj_est)
+    
         
     ## Norm
     norms = np.linalg.norm(pts_proj_gt - pts_proj_est, axis=1)
+    #print(norms)
         
     ## Re-Projection Error
     error_homography = np.average(norms)
